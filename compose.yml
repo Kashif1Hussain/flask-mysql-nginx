@@ -1,0 +1,42 @@
+services:
+  backend:
+    build: backend
+    depends_on:
+      db:
+        # When started, the Flask app will automatically create the necessary tables in
+        # MySQL. This will fail if the service is not *healthy* yet. The normal "depends_on"
+        # clause is not sufficient here, since the container of MySQL can be up but the
+        # database does not yet accept connections
+        condition: service_healthy
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_DATABASE: flask_db
+    secrets:
+      - db_root_password
+
+  webserver:
+    build: webserver
+    depends_on:
+      - backend
+    restart: on-failure
+    ports:
+      - 80:80
+
+  db:
+    image: mysql:8.0
+    restart: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_DATABASE: flask_db
+    ports:
+      - 3306:3306
+    secrets:
+      - db_root_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt

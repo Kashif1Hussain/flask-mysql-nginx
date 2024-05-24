@@ -1,4 +1,4 @@
-# Data Engineering Project Template
+# DevOps Sample Project: Flask - MySQL - NGINX
 
 In order to get a better understanding of Docker and networking, I created a minimal example of an API. The API (Flask) communicates with a database (MySQL) in order to create and fetch users. In order to call the API one has to send requests to a reverse proxy (NGINX) which will then forward the requests to Flask via a GUnicorn WSGI server. The whole infrastructure is containerized and works with docker compose.
 

@@ -1,42 +1,38 @@
-services:
-  backend:
-    build: backend
-    depends_on:
-      db:
-        # When started, the Flask app will automatically create the necessary tables in
-        # MySQL. This will fail if the service is not *healthy* yet. The normal "depends_on"
-        # clause is not sufficient here, since the container of MySQL can be up but the
-        # database does not yet accept connections
-        condition: service_healthy
-    environment:
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
-      MYSQL_DATABASE: flask_db
-    secrets:
-      - db_root_password
+services: # Define all the services for the Docker Compose setup
+  backend: # Service for the Flask backend
+    build: backend # Build the backend Docker image from the "backend" directory
+    depends_on: # Specify dependencies for the backend
+      db: # Backend depends on the database (db) service
+        condition: service_healthy # Ensure the database is healthy before starting
+    environment: # Environment variables for backend
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password # Path to the MySQL root password stored in secrets
+      MYSQL_DATABASE: flask_db # Name of the database to connect to
+    secrets: # Define secrets used by backend
+      - db_root_password # Use the database root password secret
 
-  webserver:
-    build: webserver
-    depends_on:
-      - backend
-    restart: on-failure
-    ports:
-      - 80:80
+  webserver: # Service for the Nginx webserver
+    build: webserver # Build the webserver Docker image from the "webserver" directory
+    depends_on: # Specify dependencies for the webserver
+      - backend # Webserver depends on the backend service
+    restart: on-failure # Restart the webserver if it fails
+    ports: # Map host ports to container ports
+      - 80:80 # Map port 80 of the host to port 80 of the container
 
-  db:
-    image: mysql:8.0
-    restart: on-failure
-    environment:
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
-      MYSQL_DATABASE: flask_db
-    ports:
-      - 3306:3306
-    secrets:
-      - db_root_password
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 10s
-      retries: 10
+  db: # Service for the MySQL database
+    image: mysql:8.0 # Use MySQL version 8.0 as the database image
+    restart: on-failure # Restart the database service if it fails
+    environment: # Environment variables for the database
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password # Path to the MySQL root password stored in secrets
+      MYSQL_DATABASE: flask_db # Name of the database to be created
+    ports: # Map host ports to container ports
+      - 3306:3306 # Map port 3306 of the host to port 3306 of the container
+    secrets: # Define secrets used by the database
+      - db_root_password # Use the database root password secret
+    healthcheck: # Define a health check for the database
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"] # Command to test if MySQL is running
+      timeout: 10s # Set the timeout for the health check to 10 seconds
+      retries: 10 # Retry the health check 10 times before marking it as unhealthy
 
-secrets:
-  db_root_password:
-    file: ./secrets/db_root_password.txt
+secrets: # Define secrets for the Docker Compose setup
+  db_root_password: # Define the database root password secret
+    file: ./secrets/db_root_password.txt # Path to the file containing the database root password
